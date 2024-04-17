@@ -3,10 +3,6 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// height and width of the canvas
-var width = window.innerWidth;
-var height = window.innerHeight;
-
 // desired frames per second
 const desiredFPS = 120;
 
@@ -19,6 +15,7 @@ const keys = {
   up: false
 }
 
+let paused = false;
 
 
 ///// Event listeners /////
@@ -33,6 +30,9 @@ window.addEventListener('keydown', function(event){
   if( event.key == 'w' || event.key == 'ArrowUp'){
     keys.up = true;
   }
+  if( event.key == 'p'){
+    paused = !paused;
+  }
 });
 
 window.addEventListener('keyup', function(event){
@@ -45,6 +45,19 @@ window.addEventListener('keyup', function(event){
   if( event.key == 'w' || event.key == 'ArrowUp'){
     keys.up = false;
   }
+});
+
+window.addEventListener('resize', function(){
+  collisionBlocks.forEach(block => block.updateSize());
+  player.updateSize();
+});
+
+window.addEventListener('blur', function(){
+  paused = true;
+});
+
+window.addEventListener('focus', function(){
+  paused = false;
 });
 
 
@@ -76,44 +89,81 @@ class Player {
     this.height = height;
     this.velX = velX;
     this.velY = velY;
-    this.speed = 200;
-    this.jumpHeight = 800;
+    this.speed = this.width * 6;
+    this.jumpHeight = this.height * 20;
+    this.collisionBlocks = collisionBlocks;
   }
 
   draw(){
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
     ctx.fillRect(this.x, this.y, this.width, this.height);
   }
 
   update(deltaTime){
     this.x += this.velX * deltaTime;
+
+    this.checkHorzCollision(deltaTime);
+
     this.y += this.velY * deltaTime;
+    this.velY += gravity * deltaTime * 350;
 
-    this.velY += gravity * deltaTime * 100;
-
-    this.checkCanvasBounds();
+    this.checkVertCollision(deltaTime);
   }
 
-  checkCanvasBounds(){
-    if(this.x < 0){
-      this.x = 0;
-      this.velX = 0;
+  checkHorzCollision(deltaTime){
+    //floor collision
+    for(let i=0; i< this.collisionBlocks.length; i++){
+      const block = this.collisionBlocks[i];
+
+      if(collisionDetection({object1: this, object2: block})){
+        if(this.velX * deltaTime > 0){
+          this.velX = 0;
+          const offset= this.x - this.x + this.width;
+          this.x = block.x - offset - 0.01;
+          break;
+        }
+        if(this.velX * deltaTime < 0){
+          this.velX = 0;
+          const offset= this.x - this.x;
+          this.x = block.x + block.width -offset + 0.01;
+          break
+        }
+      }
     }
-    if(this.x + this.width > canvas.width){
-      this.x = canvas.width - this.width;
-      this.velX = 0;
+  }
+
+  checkVertCollision(deltaTime){
+    //floor collision
+    for(let i=0; i< this.collisionBlocks.length; i++){
+      const block = this.collisionBlocks[i];
+
+      if(collisionDetection({object1: this, object2: block})){
+        if(this.velY*deltaTime > 0){
+          this.velY = 0;
+          const offset= this.y - this.y + this.height;
+          this.y = block.y - offset  - 0.01;
+          break;
+        }
+        if(this.velY*deltaTime < 0){
+          this.velY = 0;
+          const offset= this.y - this.y;
+          this.y = block.y + block.height - offset + 0.01;
+          break;
+        }
+      }
     }
-    if(this.y < 0){
-      this.y = 0;
-      this.velY = 0;
-    }
-    if(this.y + this.height > canvas.height){
-      this.y = canvas.height - this.height;
-      this.velY = 0;
-    }
+  }
+
+  updateSize(){
+    this.x = Math.floor(this.x / this.width) * cellSize;
+    this.y = Math.floor(this.y / this.height) * cellSize;
+    this.width = cellSize/2;
+    this.height = cellSize/2;
+    this.speed = this.width * 6;
+    this.jumpHeight = this.height * 20;
   }
 }
-const player = new Player(100, 100, 64, 64, 0, 0);
+const player = new Player(canvas.width/2, canvas.height/2, cellSize/2, cellSize/2, 0, 0);
 
 class sprite {
   constructor({x, y}, imageSrc){
@@ -145,12 +195,14 @@ function draw(){
 
   player.draw();
 
-  player.update(deltaTime);
+  if(!paused){
+    player.update(deltaTime);
 
-  if(keys.left) player.velX = -player.speed;
-  else if(keys.right) player.velX = player.speed;
-  else player.velX = 0;
-  if(keys.up && player.velY == 0) player.velY = -player.jumpHeight;
+    if(keys.left) player.velX = -player.speed;
+    else if(keys.right) player.velX = player.speed;
+    else player.velX = 0;
+    if(keys.up && player.velY === 0) player.velY = -player.jumpHeight;
+  }
 
   drawFPS(ctx);
 }
