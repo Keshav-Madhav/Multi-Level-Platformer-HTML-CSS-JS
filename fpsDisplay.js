@@ -1,3 +1,28 @@
+// Instructions and Theory:
+
+// The FPS display function is used to calculate the frames per second (FPS) of a game or animation.
+// It uses a simple formula to calculate the FPS based on the time elapsed between frames.
+// The FPS value is then displayed on the canvas to provide real-time feedback to the user.
+
+// The drawFPS function takes a single required argument, context, which is the 2D rendering context of the canvas.
+// It also takes four optional arguments: positionX, positionY, BackgroundColor, and TextColor.
+// Call this function at the end of your game loop to display the FPS on the canvas. 
+// It will automatically update the FPS value every second and display it on the canvas.
+
+// For Eg: Call this function at the end of the draw function and pass the canvas context as an argument.
+// You can also customize the position and colors of the FPS display by passing additional arguments.
+
+// function draw(){
+//   .. game logic ..
+
+//   drawFPS(ctx, 5, 10, 'rgba(255, 255, 255, 0.5)', 'black');
+//   -- OR -- 
+//   drawFPS(ctx);
+
+//   requestAnimationFrame(draw);
+// }
+// draw();
+
 let fps = 60;
 let fpsInterval = 1000 / fps;
 let lastFrameTime = Date.now();
