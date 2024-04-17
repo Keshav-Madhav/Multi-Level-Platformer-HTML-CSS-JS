@@ -19,11 +19,11 @@
 //   requestAnimationFrame(draw);
 // }
 // draw();
+let lastTime = Date.now();
 
-let lastTime = 0;
-
-function getDeltaTime(currentTime = 0) {
-  const deltaTime = (currentTime - lastTime) / 1000;
+function getDeltaTime() {
+  let currentTime = Date.now();
+  let deltaTime = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
   return deltaTime;
 }
