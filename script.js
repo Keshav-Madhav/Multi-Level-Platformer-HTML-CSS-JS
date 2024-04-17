@@ -1,11 +1,22 @@
+///// Variable declarations /////
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-//resize canvas
+// height and width of the canvas
+var width = window.innerWidth;
+var height = window.innerHeight;
+
+// desired frames per second
+const desiredFPS = 120;
+
+
+
+///// Canvas setup /////
 window.addEventListener('resize', resizeCanvas);
 function resizeCanvas() {
-  var width = window.innerWidth;
-  var height = window.innerHeight;
+  width = window.innerWidth;
+  height = window.innerHeight;
   
   // Check if height exceeds the 16:9 ratio
   if(height > width * 0.5625) {
@@ -25,6 +36,12 @@ function resizeCanvas() {
 }
 resizeCanvas();
 
+
+///// Utility functions /////
+
+
+
+///// Game loop /////
 function draw(){
   const deltaTime = getDeltaTime();
 
@@ -33,6 +50,6 @@ function draw(){
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawFPS(ctx);
-  requestAnimationFrame(draw);
 }
-draw();
+
+createConstantFPSGameLoop(desiredFPS, draw);
