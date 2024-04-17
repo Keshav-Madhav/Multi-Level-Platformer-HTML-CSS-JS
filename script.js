@@ -11,8 +11,8 @@ var height = window.innerHeight;
 const desiredFPS = 120;
 
 
-
 ///// Canvas setup /////
+
 window.addEventListener('resize', resizeCanvas);
 function resizeCanvas() {
   width = window.innerWidth;
@@ -30,24 +30,57 @@ function resizeCanvas() {
 
   canvas.width = width;
   canvas.height = height;
-
-  ctx.fillStyle = 'gray';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 resizeCanvas();
+
 
 
 ///// Utility functions /////
 
 
 
+///// Classes /////
+class Player {
+  constructor(x, y, width, height, velX, velY) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.velX = velX;
+    this.velY = velY;
+  }
+
+  draw(){
+    ctx.fillStyle = 'red';
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+  }
+
+  update(deltaTime){
+    this.x += this.velX * deltaTime;
+    this.y += this.velY * deltaTime;
+
+    if(this.x + this.width > canvas.width || this.x < 0){
+      this.velX *= -1;
+    }
+    if(this.y + this.height > canvas.height || this.y < 0){
+      this.velY *= -1;
+    }
+  }
+}
+const player = new Player(100, 100, 64, 64, 6, 2);
+
 ///// Game loop /////
 function draw(){
-  const deltaTime = getDeltaTime();
+  const deltaTime = getDeltaTime() * 100;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'gray';
+
+  ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  player.draw();
+
+  player.update(deltaTime);
 
   drawFPS(ctx);
 }
