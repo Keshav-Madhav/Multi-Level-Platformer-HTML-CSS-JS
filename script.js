@@ -10,6 +10,15 @@ var height = window.innerHeight;
 // desired frames per second
 const desiredFPS = 120;
 
+// gravity
+const gravity = 9.81;
+
+const keys = {
+  left: false,
+  right: false,
+  up: false
+}
+
 
 ///// Canvas setup /////
 
@@ -35,6 +44,33 @@ resizeCanvas();
 
 
 
+///// Event listeners /////
+
+window.addEventListener('keydown', function(event){
+  if( event.key == 'a' || event.key == 'ArrowLeft'){
+    keys.left = true;
+  }
+  if( event.key == 'd' || event.key == 'ArrowRight'){
+    keys.right = true;
+  }
+  if( event.key == 'w' || event.key == 'ArrowUp'){
+    keys.up = true;
+  }
+});
+
+window.addEventListener('keyup', function(event){
+  if( event.key == 'a' || event.key == 'ArrowLeft'){
+    keys.left = false;
+  }
+  if( event.key == 'd' || event.key == 'ArrowRight'){
+    keys.right = false;
+  }
+  if( event.key == 'w' || event.key == 'ArrowUp'){
+    keys.up = false;
+  }
+});
+
+
 ///// Utility functions /////
 
 
@@ -48,6 +84,8 @@ class Player {
     this.height = height;
     this.velX = velX;
     this.velY = velY;
+    this.speed = 200;
+    this.jumpHeight = 800;
   }
 
   draw(){
@@ -59,28 +97,46 @@ class Player {
     this.x += this.velX * deltaTime;
     this.y += this.velY * deltaTime;
 
-    if(this.x + this.width > canvas.width || this.x < 0){
-      this.velX *= -1;
+    this.velY += gravity * deltaTime * 100;
+
+    this.checkCanvasBounds();
+  }
+
+  checkCanvasBounds(){
+    if(this.x < 0){
+      this.x = 0;
+      this.velX = 0;
     }
-    if(this.y + this.height > canvas.height || this.y < 0){
-      this.velY *= -1;
+    if(this.x + this.width > canvas.width){
+      this.x = canvas.width - this.width;
+      this.velX = 0;
+    }
+    if(this.y < 0){
+      this.y = 0;
+      this.velY = 0;
+    }
+    if(this.y + this.height > canvas.height){
+      this.y = canvas.height - this.height;
+      this.velY = 0;
     }
   }
 }
-const player = new Player(100, 100, 64, 64, 6, 2);
+const player = new Player(100, 100, 64, 64, 0, 0);
 
 ///// Game loop /////
 function draw(){
-  const deltaTime = getDeltaTime() * 100;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  const deltaTime = getDeltaTime() ;
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   player.draw();
 
   player.update(deltaTime);
+
+  if(keys.left) player.velX = -player.speed;
+  else if(keys.right) player.velX = player.speed;
+  else player.velX = 0;
+  if(keys.up && player.velY == 0) player.velY = -player.jumpHeight;
 
   drawFPS(ctx);
 }
