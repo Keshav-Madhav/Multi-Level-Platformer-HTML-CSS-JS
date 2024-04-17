@@ -20,7 +20,7 @@
 // createConstantFPSGameLoop(fps, gameLoop);
 
 function createConstantFPSGameLoop(desiredFPS, gameLoopFunction) {
-  var interval = 1000 / desiredFPS; // Calculate the interval in milliseconds
+  var interval = 1000 / desiredFPS;
 
   return setInterval(gameLoopFunction, interval);
 }
