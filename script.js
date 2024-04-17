@@ -56,10 +56,6 @@ window.addEventListener('blur', function(){
   paused = true;
 });
 
-window.addEventListener('focus', function(){
-  paused = false;
-});
-
 
 ///// Utility functions /////
 
@@ -81,33 +77,96 @@ const collisionBlocks= getCollisionBlocks(collisionsLevel1);
 
 
 ///// Classes /////
-class Player {
-  constructor(x, y, width, height, velX, velY) {
+
+class sprite {
+  constructor({x, y}, imageSrc, isbg=true, frameRate=1){
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
-    this.velX = velX;
-    this.velY = velY;
-    this.speed = this.width * 6;
-    this.jumpHeight = this.height * 20;
-    this.collisionBlocks = collisionBlocks;
+    this.image = new Image();
+    this.image.src = imageSrc;
+    this.image.onload = () => {
+      this.loaded = true;
+      this.width = this.image.width / frameRate;
+      this.height = this.image.height;
+    }
+    this.loaded = false;
+    this.isbg = isbg;
+    this.frameRate = frameRate;
+    this.currentFrame = 0;
+    this.elapsedTime = 0;
+    this.frameBuffer = 5;
   }
 
-  draw(){
-    ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+  draw(deltaTime){
+    if(!this.loaded) return;
+    if(this.isbg) ctx.drawImage(this.image, this.x, this.y, canvas.width, canvas.height);
+    else{
+      const cropx = this.width * this.currentFrame;
+      const cropy = 0;
+      const cropWidth = this.width;
+      const cropHeight = this.height;
+
+      ctx.drawImage(this.image, cropx, cropy, cropWidth, cropHeight, this.x, this.y, this.width, this.height);
+      this.updateFrames();
+    };
+  }
+
+  updateFrames(){
+    this.elapsedTime ++;
+    if(this.elapsedTime % this.frameBuffer === 0){
+      this.currentFrame = (this.currentFrame + 1) % this.frameRate;
+    }
+  }
+}
+
+levelBackground = new sprite({x: 0, y: 0}, './images/backgroundLevel1.png');
+
+class Player extends sprite{
+  constructor(x, y, imageSrc, frameRate) {
+    super({x, y}, imageSrc, false, frameRate);
+    this.x = x;
+    this.y = y;
+    this.velX = 0;
+    this.velY = 0;
+    this.speed = cellSize * 3;
+    this.jumpHeight = cellSize * 10;
+    this.collisionBlocks = collisionBlocks;
+    this.hitbox = {
+      x: this.x + 60,
+      y: this.y + 34,
+      width: 45,
+      height: 56
+    }
   }
 
   update(deltaTime){
+    ctx.fillStyle= 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
     this.x += this.velX * deltaTime;
+
+    this.updateHitbox();
 
     this.checkHorzCollision(deltaTime);
 
     this.y += this.velY * deltaTime;
     this.velY += gravity * deltaTime * 350;
 
+    this.updateHitbox();
+
     this.checkVertCollision(deltaTime);
+
+    ctx.fillStyle= 'rgba(255, 0, 0, 0.3)';
+    ctx.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+  }
+
+  updateHitbox(){
+    this.hitbox={
+      x: this.x + 60,
+      y: this.y + 34,
+      width: 45,
+      height: 56
+    }
   }
 
   checkHorzCollision(deltaTime){
@@ -115,16 +174,16 @@ class Player {
     for(let i=0; i< this.collisionBlocks.length; i++){
       const block = this.collisionBlocks[i];
 
-      if(collisionDetection({object1: this, object2: block})){
+      if(collisionDetection({object1: this.hitbox, object2: block})){
         if(this.velX * deltaTime > 0){
           this.velX = 0;
-          const offset= this.x - this.x + this.width;
+          const offset= this.hitbox.x - this.x + this.hitbox.width;
           this.x = block.x - offset - 0.01;
           break;
         }
         if(this.velX * deltaTime < 0){
           this.velX = 0;
-          const offset= this.x - this.x;
+          const offset=  this.hitbox.x - this.x;
           this.x = block.x + block.width -offset + 0.01;
           break
         }
@@ -137,16 +196,16 @@ class Player {
     for(let i=0; i< this.collisionBlocks.length; i++){
       const block = this.collisionBlocks[i];
 
-      if(collisionDetection({object1: this, object2: block})){
+      if(collisionDetection({object1: this.hitbox, object2: block})){
         if(this.velY*deltaTime > 0){
           this.velY = 0;
-          const offset= this.y - this.y + this.height;
+          const offset= this.hitbox.y - this.y + this.hitbox.height;
           this.y = block.y - offset  - 0.01;
           break;
         }
         if(this.velY*deltaTime < 0){
           this.velY = 0;
-          const offset= this.y - this.y;
+          const offset= this.hitbox.y - this.y;
           this.y = block.y + block.height - offset + 0.01;
           break;
         }
@@ -155,33 +214,11 @@ class Player {
   }
 
   updateSize(){
-    this.x = Math.floor(this.x / this.width) * cellSize;
-    this.y = Math.floor(this.y / this.height) * cellSize;
-    this.width = cellSize/2;
-    this.height = cellSize/2;
-    this.speed = this.width * 6;
-    this.jumpHeight = this.height * 20;
+    this.speed = this.width * 3;
+    this.jumpHeight = this.height * 10;
   }
 }
-const player = new Player(canvas.width/2, canvas.height/2, cellSize/2, cellSize/2, 0, 0);
-
-class sprite {
-  constructor({x, y}, imageSrc){
-    this.x = x;
-    this.y = y;
-    this.image = new Image();
-    this.image.src = imageSrc;
-    this.image.onload = () => this.loaded = true;
-    this.loaded = false;
-  }
-
-  draw(){
-    if(!this.loaded) return;
-    ctx.drawImage(this.image, this.x, this.y, canvas.width, canvas.height);
-  }
-}
-
-levelBackground = new sprite({x: 0, y: 0}, './images/backgroundLevel1.png');
+const player = new Player(canvas.width/2, canvas.height/2, './images/king/idle.png', 11);
 
 
 
@@ -193,7 +230,7 @@ function draw(){
 
   collisionBlocks.forEach(block => block.draw());
 
-  player.draw();
+  player.draw(deltaTime);
 
   if(!paused){
     player.update(deltaTime);
