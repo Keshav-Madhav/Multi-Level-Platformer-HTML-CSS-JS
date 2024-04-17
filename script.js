@@ -32,6 +32,7 @@ function draw(){
   ctx.fillStyle = 'gray';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  drawFPS(ctx);
   requestAnimationFrame(draw);
 }
 draw();
