@@ -20,7 +20,18 @@ function resizeCanvas() {
   canvas.width = width;
   canvas.height = height;
 
-  ctx.fillStyle = 'red';
+  ctx.fillStyle = 'gray';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 resizeCanvas();
+
+function draw(){
+  const deltaTime = getDeltaTime();
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'gray';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  requestAnimationFrame(draw);
+}
+draw();
