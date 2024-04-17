@@ -123,11 +123,31 @@ class Player {
 }
 const player = new Player(100, 100, 64, 64, 0, 0);
 
+class sprite {
+  constructor({x, y}, imageSrc){
+    this.x = x;
+    this.y = y;
+    this.image = new Image();
+    this.image.src = imageSrc;
+    this.image.onload = () => this.loaded = true;
+    this.loaded = false;
+  }
+
+  draw(){
+    if(!this.loaded) return;
+    ctx.drawImage(this.image, this.x, this.y, canvas.width, canvas.height);
+  }
+}
+
+levelBackground = new sprite({x: 0, y: 0}, './images/backgroundLevel1.png');
+
+
+
 ///// Game loop /////
 function draw(){
   const deltaTime = getDeltaTime() ;
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  levelBackground.draw();
 
   player.draw();
 
