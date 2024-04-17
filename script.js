@@ -20,29 +20,6 @@ const keys = {
 }
 
 
-///// Canvas setup /////
-
-window.addEventListener('resize', resizeCanvas);
-function resizeCanvas() {
-  width = window.innerWidth;
-  height = window.innerHeight;
-  
-  // Check if height exceeds the 16:9 ratio
-  if(height > width * 0.5625) {
-    height = width * 0.5625;
-  } else {
-    width = height * 1.77777778;
-  }
-
-  height = Math.floor(height/64) * 64;
-  width = Math.floor(width/64) * 64;
-
-  canvas.width = width;
-  canvas.height = height;
-}
-resizeCanvas();
-
-
 
 ///// Event listeners /////
 
@@ -73,6 +50,21 @@ window.addEventListener('keyup', function(event){
 
 ///// Utility functions /////
 
+function getCollisionBlocks(array){
+  const objectArray= [];
+
+  const collisions= array.parse2D();
+  collisions.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if(cell === 210){
+        objectArray.push(new Collisions({x: x * cellSize, y: y * cellSize}));
+      }
+    })
+  });
+
+  return objectArray
+}
+const collisionBlocks= getCollisionBlocks(collisionsLevel1);
 
 
 ///// Classes /////
@@ -148,6 +140,8 @@ function draw(){
   const deltaTime = getDeltaTime() ;
 
   levelBackground.draw();
+
+  collisionBlocks.forEach(block => block.draw());
 
   player.draw();
 
