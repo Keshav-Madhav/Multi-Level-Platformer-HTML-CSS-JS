@@ -79,7 +79,7 @@ const collisionBlocks= getCollisionBlocks(collisionsLevel1);
 ///// Classes /////
 
 class sprite {
-  constructor({x, y}, imageSrc, isbg=true, frameRate=1){
+  constructor({x, y}, imageSrc, isbg=true, frameRate=1, animations){
     this.x = x;
     this.y = y;
     this.image = new Image();
@@ -95,6 +95,13 @@ class sprite {
     this.currentFrame = 0;
     this.elapsedTime = 0;
     this.frameBuffer = 5;
+    this.animations = animations;
+
+    for(const key in this.animations){
+      const image = new Image();
+      image.src = this.animations[key].image;
+      animations[key].image = image;
+    }
   }
 
   draw(deltaTime){
@@ -122,8 +129,8 @@ class sprite {
 levelBackground = new sprite({x: 0, y: 0}, './images/backgroundLevel1.png');
 
 class Player extends sprite{
-  constructor(x, y, imageSrc, frameRate) {
-    super({x, y}, imageSrc, false, frameRate);
+  constructor(x, y, imageSrc, frameRate, animations) {
+    super({x, y}, imageSrc, false, frameRate, animations);
     this.x = x;
     this.y = y;
     this.velX = 0;
@@ -140,24 +147,33 @@ class Player extends sprite{
   }
 
   update(deltaTime){
-    ctx.fillStyle= 'rgba(0, 0, 0, 0.3)';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
-
+    
     this.x += this.velX * deltaTime;
-
+    
     this.updateHitbox();
-
+    
     this.checkHorzCollision(deltaTime);
-
+    
     this.y += this.velY * deltaTime;
     this.velY += gravity * deltaTime * 350;
-
+    
     this.updateHitbox();
-
+    
     this.checkVertCollision(deltaTime);
+    
+    //ctx.fillStyle= 'rgba(0, 0, 0, 0.3)';
+    //ctx.fillRect(this.x, this.y, this.width, this.height);
+    //ctx.fillStyle= 'rgba(255, 0, 0, 0.3)';
+    //ctx.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+  }
 
-    ctx.fillStyle= 'rgba(255, 0, 0, 0.3)';
-    ctx.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+  switchSprite(animation){
+    if(this.animations[animation].image === this.image) return;
+
+    this.image = this.animations[animation].image;
+    this.frameRate = this.animations[animation].frameRate;
+    this.frameBuffer = this.animations[animation].frameBuffer;
+    this.currentFrame = 0;
   }
 
   updateHitbox(){
@@ -218,7 +234,38 @@ class Player extends sprite{
     this.jumpHeight = this.height * 10;
   }
 }
-const player = new Player(canvas.width/2, canvas.height/2, './images/king/idle.png', 11);
+const player = new Player(
+  canvas.width/2, 
+  canvas.height/2, 
+  './images/king/idle.png', 
+  11, 
+  animations={
+    idleRight: {
+      frameBuffer: 5,
+      frameRate: 11,
+      loop: true,
+      image: './images/king/idle.png'
+    },
+    idleLeft: {
+      frameBuffer: 5,
+      frameRate: 11,
+      loop: true,
+      image: './images/king/idleLeft.png'
+    },
+    runLeft: {
+      frameBuffer: 8,
+      frameRate: 8,
+      loop: true,
+      image: './images/king/runLeft.png'
+    },
+    runRight: {
+      frameBuffer: 8,
+      frameRate: 8,
+      loop: true,
+      image: './images/king/runRight.png'
+    }
+  }
+);
 
 
 
@@ -228,17 +275,29 @@ function draw(){
 
   levelBackground.draw();
 
-  collisionBlocks.forEach(block => block.draw());
+  //collisionBlocks.forEach(block => block.draw());
 
   player.draw(deltaTime);
 
   if(!paused){
     player.update(deltaTime);
 
-    if(keys.left) player.velX = -player.speed;
-    else if(keys.right) player.velX = player.speed;
-    else player.velX = 0;
-    if(keys.up && player.velY === 0) player.velY = -player.jumpHeight;
+    if(keys.left) {
+      player.velX = -player.speed;
+      player.switchSprite('runLeft');
+    }
+    else if(keys.right) {
+      player.velX = player.speed
+      player.switchSprite('runRight');
+    }
+    else {
+      player.velX = 0
+      if(player.image.src.includes('runLeft')) player.switchSprite('idleLeft');
+      if(player.image.src.includes('runRight')) player.switchSprite('idleRight');
+    };
+    if(keys.up && player.velY === 0) {
+      player.velY = -player.jumpHeight;
+    }
   }
 
   drawFPS(ctx);
