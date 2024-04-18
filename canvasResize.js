@@ -1,4 +1,5 @@
 let cellSize = 64;
+let oldCellSize = 64;
 
 window.addEventListener('resize', resizeCanvas);
 function resizeCanvas() {
@@ -16,6 +17,7 @@ function resizeCanvas() {
   width = Math.floor(width / cellSize) * cellSize;
   height = Math.floor(width * 0.5625 / cellSize) * cellSize;
 
+  oldCellSize = cellSize;
   cellSize = (height / 9 + width / 16) / 2;
 
   canvas.width = width;

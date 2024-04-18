@@ -50,6 +50,8 @@ window.addEventListener('keyup', function(event){
 window.addEventListener('resize', function(){
   collisionBlocks.forEach(block => block.updateSize());
   player.updateSize();
+  levelBackground.updateSprite();
+  doors.forEach(door => door.updateSprite());
 });
 
 window.addEventListener('blur', function(){
@@ -79,28 +81,31 @@ const collisionBlocks= getCollisionBlocks(collisionsLevel1);
 ///// Classes /////
 
 class sprite {
-  constructor({x, y}, imageSrc, isbg=true, frameRate=1, animations){
+  constructor({x, y}, imageSrc, isbg=true, frameRate=1, animations = {}, frameBuffer=5, loop=true){
     this.x = x;
     this.y = y;
     this.image = new Image();
     this.image.src = imageSrc;
     this.image.onload = () => {
       this.loaded = true;
-      this.width = this.image.width / frameRate;
-      this.height = this.image.height;
+      this.width = this.image.width / frameRate  * cellSize / 64;
+      this.height = this.image.height  * cellSize / 64;
     }
     this.loaded = false;
     this.isbg = isbg;
     this.frameRate = frameRate;
     this.currentFrame = 0;
     this.elapsedTime = 0;
-    this.frameBuffer = 5;
+    this.frameBuffer = frameBuffer;
     this.animations = animations;
+    this.loop = loop;
 
-    for(const key in this.animations){
-      const image = new Image();
-      image.src = this.animations[key].image;
-      animations[key].image = image;
+    if(animations){
+      for(const key in this.animations){
+        const image = new Image();  
+        image.src = this.animations[key].image;
+        animations[key].image = image;
+      }
     }
   }
 
@@ -108,10 +113,10 @@ class sprite {
     if(!this.loaded) return;
     if(this.isbg) ctx.drawImage(this.image, this.x, this.y, canvas.width, canvas.height);
     else{
-      const cropx = this.width * this.currentFrame;
-      const cropy = 0;
-      const cropWidth = this.width;
-      const cropHeight = this.height;
+      const cropx = this.width * this.currentFrame  * 64 / cellSize;
+      const cropy = 0;  
+      const cropWidth = this.width * 64 / cellSize;
+      const cropHeight = this.height * 64 / cellSize;
 
       ctx.drawImage(this.image, cropx, cropy, cropWidth, cropHeight, this.x, this.y, this.width, this.height);
       this.updateFrames();
@@ -121,8 +126,23 @@ class sprite {
   updateFrames(){
     this.elapsedTime ++;
     if(this.elapsedTime % this.frameBuffer === 0){
-      this.currentFrame = (this.currentFrame + 1) % this.frameRate;
+      this.currentFrame++;
+      if(this.currentFrame >= this.frameRate){
+        if(this.loop) this.currentFrame = 0;
+        else this.currentFrame = this.frameRate - 1;
+      }
     }
+  }
+
+  updateSprite(){
+    // Update position
+    const scaleFactor = cellSize / oldCellSize;
+    this.x *= scaleFactor;
+    this.y *= scaleFactor;
+
+    // Update dimensions
+    this.width = this.image.width / this.frameRate  * cellSize / 64;
+    this.height = this.image.height  * cellSize / 64;
   }
 }
 
@@ -173,15 +193,16 @@ class Player extends sprite{
     this.image = this.animations[animation].image;
     this.frameRate = this.animations[animation].frameRate;
     this.frameBuffer = this.animations[animation].frameBuffer;
+    this.loop = this.animations[animation].loop;
     this.currentFrame = 0;
   }
 
   updateHitbox(){
     this.hitbox={
-      x: this.x + 60,
-      y: this.y + 34,
-      width: 45,
-      height: 56
+      x: this.x + 62 * cellSize / 64,
+      y: this.y + 36 * cellSize / 64,
+      width: 40 * cellSize / 64,
+      height: 52 * cellSize / 64
     }
   }
 
@@ -230,10 +251,23 @@ class Player extends sprite{
   }
 
   updateSize(){
-    this.speed = this.width * 3;
-    this.jumpHeight = this.height * 10;
-  }
+    const scaleFactor = cellSize / oldCellSize;
+    this.x *= scaleFactor;
+    this.y *= scaleFactor;
+  
+    // Update dimensions
+    this.width = this.image.width / this.frameRate * cellSize / 64;
+    this.height = this.image.height * cellSize / 64;
+  
+    // Update speed and jump height
+    this.speed * scaleFactor;
+    this.jumpHeight * scaleFactor;
+  
+    // Update hitbox
+    this.updateHitbox();
+  }  
 }
+
 const player = new Player(
   canvas.width/2, 
   canvas.height/2, 
@@ -267,6 +301,9 @@ const player = new Player(
   }
 );
 
+const doors=[
+  new sprite( {x:cellSize*12, y:cellSize * 6 - cellSize * 1.77}, './images/doorOpen.png', false, frameRate=5,{}, frameBuffer=15, loop= false),
+]
 
 
 ///// Game loop /////
@@ -276,6 +313,8 @@ function draw(){
   levelBackground.draw();
 
   //collisionBlocks.forEach(block => block.draw());
+
+  doors.forEach(door => door.draw());
 
   player.draw(deltaTime);
 
