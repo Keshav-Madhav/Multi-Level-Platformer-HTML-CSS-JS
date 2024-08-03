@@ -317,10 +317,11 @@ function draw(){
   doors.forEach(door => door.draw());
 
   player.draw(deltaTime);
-
+  
   if(!paused){
+    
     player.update(deltaTime);
-
+    
     if(keys.left) {
       player.velX = -player.speed;
       player.switchSprite('runLeft');
